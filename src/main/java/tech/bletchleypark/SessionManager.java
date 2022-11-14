@@ -1,6 +1,5 @@
-package lde.kiwi;
+package tech.bletchleypark;
 
 public class SessionManager {
-
     
 }

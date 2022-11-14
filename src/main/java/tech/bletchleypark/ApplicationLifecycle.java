@@ -1,4 +1,4 @@
-package lde.kiwi;
+package tech.bletchleypark;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
@@ -8,7 +8,7 @@ import io.quarkus.runtime.StartupEvent;
 @ApplicationScoped
 public class ApplicationLifecycle {
 
-    SessionManager sessionManager = new SessionManager();
+    public final SessionManager sessionManager = new SessionManager();
 
     String test(){
         return "test";
