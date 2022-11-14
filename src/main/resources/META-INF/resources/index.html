@@ -290,12 +290,28 @@
   <div class="content-wrapper">
     <div class="grid">
       <div class="left-column">
-        <h1>You just laneded at LDEGo application services.</h1>
+        <h1>You just arrived at LDEGo application services.</h1>
       </div>
     </div>
 </body>
 <script>
   setInterval(doDate, 1000);
+  setInterval(doSession, 1000);
+  function doSession(){
+  $.ajax({
+      type: "GET",
+      url: '/info?requestFor=sessions',
+      crossDomain: true,
+      success: function (data) {
+        $('#sessions').html(data);
+      },
+      error: function (xhr, ajaxOptions, thrownError) {
+        console.log('xHR: ' + xhr);
+        console.log('ajaxOption: ' + ajaxOptions);
+        console.log('thrownError: ' + thrownError);
+      }
+    });
+  }
   function doDate() {
     var str = "";
     $.ajax({
@@ -313,26 +329,12 @@
     });
   }
   $().ready(function () {
-
     $.ajax({
       type: "GET",
       url: '/info?requestFor=container',
       crossDomain: true,
       success: function (data) {
         $('#container').html(data);
-      },
-      error: function (xhr, ajaxOptions, thrownError) {
-        console.log('xHR: ' + xhr);
-        console.log('ajaxOption: ' + ajaxOptions);
-        console.log('thrownError: ' + thrownError);
-      }
-    });
-    $.ajax({
-      type: "GET",
-      url: '/info?requestFor=sessions',
-      crossDomain: true,
-      success: function (data) {
-        $('#sessions').html(data);
       },
       error: function (xhr, ajaxOptions, thrownError) {
         console.log('xHR: ' + xhr);

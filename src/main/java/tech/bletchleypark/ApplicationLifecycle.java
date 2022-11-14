@@ -8,8 +8,7 @@ import io.quarkus.runtime.StartupEvent;
 @ApplicationScoped
 public class ApplicationLifecycle {
 
-    public final SessionManager sessionManager = new SessionManager();
-
+ 
     String test(){
         return "test";
     }
