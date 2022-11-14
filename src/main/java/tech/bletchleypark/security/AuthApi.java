@@ -1,4 +1,4 @@
-package lde.kiwi.api;
+package tech.bletchleypark.security;
 
 import javax.ws.rs.Path;
 
