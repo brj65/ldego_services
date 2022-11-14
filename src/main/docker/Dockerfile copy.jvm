@@ -7,18 +7,18 @@
 #
 # Then, build the image with:
 #
-# docker build -f src/main/docker/Dockerfile.jvm -t quarkus/infitech_lt-jvm .
+# docker build -f src/main/docker/Dockerfile.jvm -t quarkus/ldego_services-jvm .
 #
 # Then run the container using:
 #
-# docker run -i --rm -p 8080:8080 quarkus/infitech_lt-jvm
+# docker run -i --rm -p 8080:8080 quarkus/ldego_services-jvm
 #
 # If you want to include the debug port into your docker image
 # you will have to expose the debug port (default 5005) like this :  EXPOSE 8080 5005
 #
 # Then run the container using :
 #
-# docker run -i --rm -p 8080:8080 quarkus/infitech_lt-jvm
+# docker run -i --rm -p 8080:8080 quarkus/ldego_services-jvm
 #
 # This image uses the `run-java.sh` script to run the application.
 # This scripts computes the command line to execute your Java application, and
@@ -75,204 +75,10 @@
 #   accessed directly. (example: "foo.example.com,bar.example.com")
 #
 ###
+FROM registry.access.redhat.com/ubi8/openjdk-17:1.14
 
-FROM  ubuntu:18.04
+ENV LANGUAGE='en_US:en'
 
-ARG IM_VERSION=7.1.0-51
-
-USER root 
-# install app dependencies
-#RUN apt-get update && apt-get install -y python3 python3-pip
-#RUN pip install flask==2.1.*
-
-RUN mkdir /java
-
-
-ENV JAVA_HOME=/java/jdk-17
-ENV AB_JOLOKIA_OFF=""
-ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
-
-ENV JAVA_APP_JAR="/deployments/quarkus-run.jar"
-
-ENV BUILD_VERSION="fedora 29b"
-
-# Install Open-JDK-17
-
-
-#RUN  dnf -y install curl wget
-
-RUN apt update && apt upgrade
-RUN apt  -y install wget
-RUN apt -y install git
-
-
-
-RUN wget https://download.java.net/openjdk/jdk17/ri/openjdk-17+35_linux-x64_bin.tar.gz
-RUN tar xvf openjdk-17+35_linux-x64_bin.tar.gz
-
-RUN mv jdk-17 $JAVA_HOME
-
-RUN rm openjdk-17+35_linux-x64_bin.tar.gz
-
-# Install ImageMagick
-
-ENV app.imagemagic.avaiable=true
-
-
-# inspired by https://gist.github.com/rjnienaber/af47fccb8410926ba7ea35f96c3b87fd
-
-# remove bundled ImageMagick
-
-#RUN apt -y install libheif-dev
-
-#RUN  apt-get -y install libheif-examples
-
-#RUN apt remove imagemagick -y
-
-# install base dependencies
-RUN apt-get install -y \
-  build-essential \
-  libde265-dev \
-  libdjvulibre-dev \
-  libfftw3-dev \
-  libghc-bzlib-dev \
-  libgoogle-perftools-dev \
-  libgraphviz-dev \
-  libgs-dev \
-  libheif-dev \
-  libjbig-dev \
-  libjemalloc-dev \
-  libjpeg-dev \
-  liblcms2-dev \
-  liblqr-1-0-dev \
-  liblzma-dev \
-  libopenexr-dev \
-  libopenjp2-7-dev \
-  libpango1.0-dev \
-  libraqm-dev \
-  libraw-dev \
-  librsvg2-dev \
-  libtiff-dev \
-  libwebp-dev \
-  libwmf-dev \
-  libxml2-dev \
-  libzip-dev \
-  libzstd-dev
-
-# installing
-RUN git clone --depth 1 --branch 7.1.0-51 https://github.com/ImageMagick/ImageMagick.git
-
-WORKDIR /ImageMagick
-
-RUN ./configure \
-	--with-bzlib=yes \
-	--with-djvu=yes \
-	--with-fftw=yes \
-	--with-flif=yes \
-	--with-fontconfig=yes \
-	--with-freetype=yes \
-	--with-gslib=yes \
-	--with-gvc=yes \
-	--with-heic=yes \
-	--with-jbig=yes \
-	--with-jemalloc=yes \
-	--with-jpeg=yes \
-	--with-lcms=yes \
-	--with-lqr=yes \
-	--with-lzma=yes \
-	--with-magick-plus-plus=yes \
-	--with-openexr=yes \
-	--with-openjp2=yes \
-	--with-pango=yes \
-	--with-perl=yes \
-	--with-png=yes \
-	--with-raqm=yes \
-	--with-raw=yes \
-	--with-rsvg=yes \
-	--with-tcmalloc=yes \
-	--with-tiff=yes \
-	--with-webp=yes \
-	--with-wmf=yes \
-	--with-x=yes \
-	--with-xml=yes \
-	--with-zip=yes \
-	--with-zlib=yes \
-	--with-zstd=yes \
-    --with-gcc-arch=native 
-
-RUN make -j 8
-RUN make install
-RUN ldconfig /usr/local/lib
-
-
-# Rebuild  HIC
-RUN apt-get -y update
-RUN apt-get -y install build-essential autoconf git-core
-#RUN apt-get -y build-dep imagemagick libde265 libheif
-WORKDIR /usr/src/ 
-RUN git clone https://github.com/strukturag/libde265.git 
-RUN git clone https://github.com/strukturag/libheif.git 
-WORKDIR /usr/src/libde265/ 
-RUN ./autogen.sh 
-RUN ./configure 
-RUN make -j 8
-RUN make install 
-WORKDIR /usr/src/libheif/ 
-RUN ./autogen.sh 
-RUN ./configure 
-RUN make -j 8 
-RUN make install 
-
-WORKDIR /ImageMagick
-
-RUN ./configure \
-	--with-bzlib=yes \
-	--with-djvu=yes \
-	--with-fftw=yes \
-	--with-flif=yes \
-	--with-fontconfig=yes \
-	--with-freetype=yes \
-	--with-gslib=yes \
-	--with-gvc=yes \
-	--with-heic=yes \
-	--with-jbig=yes \
-	--with-jemalloc=yes \
-	--with-jpeg=yes \
-	--with-lcms=yes \
-	--with-lqr=yes \
-	--with-lzma=yes \
-	--with-magick-plus-plus=yes \
-	--with-openexr=yes \
-	--with-openjp2=yes \
-	--with-pango=yes \
-	--with-perl=yes \
-	--with-png=yes \
-	--with-raqm=yes \
-	--with-raw=yes \
-	--with-rsvg=yes \
-	--with-tcmalloc=yes \
-	--with-tiff=yes \
-	--with-webp=yes \
-	--with-wmf=yes \
-	--with-x=yes \
-	--with-xml=yes \
-	--with-zip=yes \
-	--with-zlib=yes \
-	--with-zstd=yes \
-    --with-gcc-arch=native 
-
-RUN make -j 8
-RUN make install
-RUN ldconfig /usr/local/lib
-
-
-# heic should appear in the Delegates line
-
-
-# check
-RUN identify --version
-
-ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
 
 # We make four distinct layers so if there are application changes the library layers can be re-used
 COPY --chown=185 target/quarkus-app/lib/ /deployments/lib/
@@ -280,13 +86,8 @@ COPY --chown=185 target/quarkus-app/*.jar /deployments/
 COPY --chown=185 target/quarkus-app/app/ /deployments/app/
 COPY --chown=185 target/quarkus-app/quarkus/ /deployments/quarkus/
 
+EXPOSE 8080
+USER 185
+ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+ENV JAVA_APP_JAR="/deployments/quarkus-run.jar"
 
-ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$JAVA_HOME/bin
-
-RUN java -version
-
-EXPOSE 80
-
-
-#ENTRYPOINT ["java","${JAVA_OPTS}","-jar","${JAVA_APP_JAR}"]s
-ENTRYPOINT ["java","-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager","-jar","/deployments/quarkus-run.jar"]
