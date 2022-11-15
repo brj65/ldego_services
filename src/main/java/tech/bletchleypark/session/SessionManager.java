@@ -119,11 +119,11 @@ public class SessionManager {
                 return session;
             }
            if(!application.localSessionsOnly()){
-            session = session.fetch(jwt.getClaim("sessionId").asString(),defaultDataSource);
+            session = Session.fetch(jwt.getClaim("sessionId").asString(),defaultDataSource);
             if (session != null && session.getSessionState().notExpired()) {
                 session.updateSystemSession(defaultDataSource);
                 sessions.put(session.sessionId, session);
-                logger.warn("found on on other sever "+session.getInstanceId());
+                logger.info("found on on other sever "+session.getInstanceId()+" - "+session.sessionId);
                 return session;
             }
            } 

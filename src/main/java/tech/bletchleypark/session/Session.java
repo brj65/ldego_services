@@ -227,7 +227,7 @@ public int getInstanceId() {
         }
     }
 
-    public Session fetch(String sessionId,AgroalDataSource dataSource) {
+    public static Session fetch(String sessionId,AgroalDataSource dataSource) {
         try {
             
         try(Connection connection = dataSource.getConnection();
