@@ -276,7 +276,7 @@
               <li>GroupId: <code>lde.kiwi</code></li>
               <li>ArtifactId: <code>ldego_services</code></li>
               <li>Version: <code>2.0</code></li>
-              <li>Build: <code>1234</code></li>
+              <li>Build: <code>2</code></li>
               <li>Base Version: <code>2.14.0.Final</code></li>
               <li>Container: <code id="container"></code></li>
               <li>Sessions: <code id="sessions"></code></li>
@@ -295,10 +295,8 @@
     </div>
 </body>
 <script>
-  setInterval(doDate, 1000);
-  setInterval(doSession, 1000);
-  function doSession(){
-  $.ajax({
+  function doSession() {
+    $.ajax({
       type: "GET",
       url: '/info?requestFor=sessions',
       crossDomain: true,
@@ -335,6 +333,8 @@
       crossDomain: true,
       success: function (data) {
         $('#container').html(data);
+        setInterval(doDate, 1000);
+        setInterval(doSession, 1000);
       },
       error: function (xhr, ajaxOptions, thrownError) {
         console.log('xHR: ' + xhr);

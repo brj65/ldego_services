@@ -16,13 +16,12 @@ import org.joda.time.DateTime;
 import tech.bletchleypark.ApplicationLifecycle;
 import tech.bletchleypark.session.Session;
 import tech.bletchleypark.session.SessionManager;
-import tech.bletchleypark.session.SessionManager.SessionType;
+import tech.bletchleypark.session.Session.SessionState;
 
 import static tech.bletchleypark.ConfigProviderManager.*;
 
 @Path("")
 public class GeneralAPI {
-
     @Inject
     ApplicationLifecycle app;
     @Inject
@@ -33,7 +32,7 @@ public class GeneralAPI {
     @Produces(MediaType.TEXT_PLAIN)
     public Response getInfo(@QueryParam("requestFor") String requestFor, @Context UriInfo ui,
             @Context HttpHeaders httpHeader) {
-        Session session = sessionMgr.getSession(httpHeader,ui);
+        Session session = sessionMgr.getSession(httpHeader, ui);
         String responce = "";
         switch (requestFor.toLowerCase()) {
             case "container":
@@ -41,8 +40,9 @@ public class GeneralAPI {
                         + optConfigString("container_name", "LDEGO");
                 break;
             case "sessions":
-                responce = sessionMgr.countSessions(SessionType.WEB) + "/"
-                        + sessionMgr.countSessions(SessionType.DEVICE);
+                responce = sessionMgr.countSessions(SessionState.SLEEPING) + "/"
+                        + sessionMgr.countSessions(SessionState.EXPIRED) + "/"
+                        + sessionMgr.countSessions(null);
                 break;
             case "serverdatetime":
                 responce = DateTime.now().toString("EE dd MMM yy kk:hh:ss z");
@@ -56,7 +56,7 @@ public class GeneralAPI {
     @Produces(MediaType.TEXT_PLAIN)
     public Response init(@QueryParam("requestFor") String requestFor, @Context UriInfo ui,
             @Context HttpHeaders httpHeader) {
-        Session session = sessionMgr.getSession(httpHeader,ui);
+        Session session = sessionMgr.getSession(httpHeader, ui);
         return Response.ok().cookie(session.getCookies()).build();
     }
 }
