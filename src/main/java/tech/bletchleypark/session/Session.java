@@ -103,7 +103,7 @@ public class Session {
         sessionId = UUID.randomUUID().toString();
         jwt = createJWTToken();
         decodedJWT = JWT.decode(jwt);
-        xMachineId = httpHeader.getHeaderString("X-MACHINE-ID");
+        xMachineId = httpHeader.getHeaderString("X-Machine-Id");
         xApplication = httpHeader.getHeaderString("X-Application");
         xVersion = httpHeader.getHeaderString("X-Version");
         userAgent = httpHeader.getHeaderString("User-Agent");
