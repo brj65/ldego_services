@@ -80,23 +80,30 @@ public class SessionManager {
                 }
                 running = true;
                 passes = 0;
-                if (passes==5 && !optConfigBoolean("bpark.sessions.local.only", false))
+                if ( !optConfigBoolean("bpark.sessions.local.only", false))
                     try {
+                        List<String> sessionIdOnServer = new ArrayList<String>() ;
                         try (Connection connection = defaultDataSource.getConnection();
                                 PreparedStatement ps = connection.prepareStatement("SELECT * FROM system_sessions");
                                 ResultSet rst = ps.executeQuery()) {
                             while (rst.next()) {
                                 Session session = Session.create(rst);
-                                if (sessions.get(session.sessionId) == null) {
+                                sessionIdOnServer.add(session.sessionId);
+                                if (sessions.get(session.sessionId) != null) {
+                                    sessions.replace(session.sessionId, session);
+                                }else{
                                     sessions.put(session.sessionId, session);
                                 }
                             }
-
                         }
+                        List<String> deleteThese = getSessionKeys(null);    
+                        deleteThese.removeAll(sessionIdOnServer);
+                        deleteThese.forEach(key->{
+                            sessions.remove(key);
+                        });
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-
                 List<Session> expiredSession = getSessions(SessionState.EXPIRED);
                 if (!expiredSession.isEmpty())
                     logger.info("Removed " + expiredSession.size() + " sessions of " + countSessions());

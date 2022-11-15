@@ -28,7 +28,6 @@ import tech.bletchleypark.SystemLogger;
 import tech.bletchleypark.SystemLogger.ErrorCode;
 
 import static tech.bletchleypark.ConfigProviderManager.*;
-import static tech.bletchleypark.ApplicationLifecycle.*;
 
 public class Session {
 
