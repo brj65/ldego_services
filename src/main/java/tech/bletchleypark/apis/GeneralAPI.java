@@ -59,4 +59,11 @@ public class GeneralAPI {
         Session session = sessionMgr.getSession(httpHeader, ui);
         return Response.ok().cookie(session.getCookies()).build();
     }
+
+    @GET
+    @Path("status")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response status(){
+        return Response.ok().build();
+    }
 }
