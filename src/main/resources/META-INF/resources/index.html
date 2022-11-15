@@ -309,6 +309,21 @@
         console.log('thrownError: ' + thrownError);
       }
     });
+    $.ajax({
+      type: "GET",
+      url: '/info?requestFor=container',
+      crossDomain: true,
+      success: function (data) {
+        $('#container').html(data);
+        setInterval(doDate, 1000);
+        setInterval(doSession, 60000);
+      },
+      error: function (xhr, ajaxOptions, thrownError) {
+        console.log('xHR: ' + xhr);
+        console.log('ajaxOption: ' + ajaxOptions);
+        console.log('thrownError: ' + thrownError);
+      }
+    });
   }
   function doDate() {
     var str = "";
@@ -327,21 +342,8 @@
     });
   }
   $().ready(function () {
-    $.ajax({
-      type: "GET",
-      url: '/info?requestFor=container',
-      crossDomain: true,
-      success: function (data) {
-        $('#container').html(data);
-        setInterval(doDate, 1000);
-        setInterval(doSession, 1000);
-      },
-      error: function (xhr, ajaxOptions, thrownError) {
-        console.log('xHR: ' + xhr);
-        console.log('ajaxOption: ' + ajaxOptions);
-        console.log('thrownError: ' + thrownError);
-      }
-    });
+    doSession();
+    doDate();
   });
 </script>
 
