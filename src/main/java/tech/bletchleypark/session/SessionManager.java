@@ -22,6 +22,7 @@ import org.json.JSONArray;
 import com.auth0.jwt.interfaces.DecodedJWT;
 
 import io.agroal.api.AgroalDataSource;
+import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 import tech.bletchleypark.ApplicationLifecycle;
 import tech.bletchleypark.SystemLogger;
@@ -46,6 +47,16 @@ public class SessionManager {
         DEVICE, WEB
     }
 
+    void onStop(@Observes ShutdownEvent ev) {
+        try {
+              cleanup.cancel();
+        } catch (Exception e) {
+                // do nothing
+        }
+        logger.info("The application is stopping...");
+}
+
+
     void onStart(@Observes StartupEvent ev) {
         cleanup.schedule(new TimerTask() {
             private boolean running = false;
@@ -69,7 +80,7 @@ public class SessionManager {
                 }
                 running = true;
                 passes = 0;
-                if (!optConfigBoolean("bpark.sessions.local.only", false))
+                if (passes==5 && !optConfigBoolean("bpark.sessions.local.only", false))
                     try {
                         try (Connection connection = defaultDataSource.getConnection();
                                 PreparedStatement ps = connection.prepareStatement("SELECT * FROM system_sessions");
@@ -127,8 +138,8 @@ public class SessionManager {
                 return session;
             }
            } 
-        }
-        session = Session.create(httpHeader, ui);
+        }        
+        session = Session.create(httpHeader, ui);        
         addSession(session);
         return session;
     }

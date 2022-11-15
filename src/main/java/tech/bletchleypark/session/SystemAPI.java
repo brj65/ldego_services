@@ -14,8 +14,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.json.JSONObject;
-
 import tech.bletchleypark.ApplicationLifecycle;
 import tech.bletchleypark.SystemLogger;
 
@@ -32,17 +30,17 @@ public class SystemAPI {
     @GET
     @Path("config/datasource")
     @Produces(MediaType.APPLICATION_JSON)
-    public JSONObject getDtatsoureceConfig(@Context UriInfo ui,
+    public Response getDtatsoureceConfig(@Context UriInfo ui,
             @Context HttpHeaders httpHeader) {
-        return application.getDefaultDataSourceConfig();
+        return Response.ok(application.getDefaultDataSourceConfig().toString()).build();
     }
 
     @GET
     @Path("config")
     @Produces(MediaType.APPLICATION_JSON)
-    public JSONObject getConfig(@Context UriInfo ui,
+    public Response getConfig(@Context UriInfo ui,
             @Context HttpHeaders httpHeader) {
-        return application.getConfig();
+        return  Response.ok(application.getConfig().toString()).build();
     }
 
     @GET

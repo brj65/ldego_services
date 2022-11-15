@@ -1,4 +1,4 @@
-package tech.bletchleypark.apis;
+package tech.bletchleypark.api;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
@@ -45,7 +45,7 @@ public class GeneralAPI {
                         + sessionMgr.countSessions(null);
                 break;
             case "serverdatetime":
-                responce = DateTime.now().toString("EE dd MMM yy kk:hh:ss z");
+                responce = DateTime.now().toString("EE dd MMM yy kk:mm:ss z") +"  ["+app.getInstanceId()+"]";
                 break;
         }
         return Response.ok(responce).cookie(session.getCookies()).build();

@@ -23,6 +23,9 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.annotations.Expose;
 
 import io.agroal.api.AgroalDataSource;
+import tech.bletchleypark.ApplicationLifecycle;
+import tech.bletchleypark.SystemLogger;
+import tech.bletchleypark.SystemLogger.ErrorCode;
 
 import static tech.bletchleypark.ConfigProviderManager.*;
 import static tech.bletchleypark.ApplicationLifecycle.*;
@@ -49,6 +52,16 @@ public class Session {
     private DateTime lastAccessed;
     @Expose
     private int instanceId;
+    @Expose
+    private String xMachineId = "";
+    @Expose
+    private String userAgent = "";
+    @Expose
+    private String xApplication = "";
+    @Expose
+    private String xVersion = "";
+    @Expose
+    private JSONObject other = new JSONObject();
 
     public enum SessionState {
         CREATED, ACTIVE, SLEEPING, EXPIRED;
@@ -57,9 +70,11 @@ public class Session {
             return this != EXPIRED;
         }
     }
-public int getInstanceId() {
-    return instanceId;
-}
+
+    public int getInstanceId() {
+        return instanceId;
+    }
+
     public static Session create(HttpHeaders httpHeader, UriInfo ui) {
         return new Session(httpHeader, ui);
     }
@@ -76,6 +91,11 @@ public int getInstanceId() {
         jwt = rst.getString("jwt");
         instanceId = rst.getInt("instance_id");
         decodedJWT = JWT.decode(jwt);
+        xMachineId = rst.getString("machine_id");
+        xApplication = rst.getString("application");
+        xVersion = rst.getString("version");
+        userAgent = rst.getString("user_agent");
+        other = new JSONObject(rst.getString("other"));
     }
 
     private Session(HttpHeaders httpHeader, UriInfo ui) {
@@ -84,6 +104,10 @@ public int getInstanceId() {
         sessionId = UUID.randomUUID().toString();
         jwt = createJWTToken();
         decodedJWT = JWT.decode(jwt);
+        xMachineId = httpHeader.getHeaderString("X-MACHINE-ID");
+        xApplication = httpHeader.getHeaderString("X-Application");
+        xVersion = httpHeader.getHeaderString("X-Version");
+        userAgent = httpHeader.getHeaderString("User-Agent");
     }
 
     public NewCookie[] getCookies() {
@@ -123,11 +147,25 @@ public int getInstanceId() {
 
     // Static
     public static DecodedJWT getJWT(HttpHeaders httpHeader) {
+
         if (httpHeader.getCookies().keySet().contains(SESSION_KEY)
                 || httpHeader.getRequestHeaders().keySet().contains(SESSION_KEY)) {
-            return JWT.decode(httpHeader.getCookies().keySet().contains(SESSION_KEY)
+            String jwt = httpHeader.getCookies().keySet().contains(SESSION_KEY)
                     ? httpHeader.getCookies().get(SESSION_KEY).getValue()
-                    : httpHeader.getRequestHeader(SESSION_KEY).get(0));
+                    : httpHeader.getRequestHeader(SESSION_KEY).get(0);
+            if (!jwt.isEmpty()) {
+                try {
+                    return JWT.decode(jwt);
+                } catch (com.auth0.jwt.exceptions.JWTDecodeException ex) {
+                    SystemLogger.getLogger(Session.class).builder()
+                            .errorCode(ErrorCode.INVAILD_JWT)
+                            .message("Invaild JWT Token")
+                            .extra(httpHeader.getCookies().keySet().contains(SESSION_KEY)
+                                    ? httpHeader.getCookies().get(SESSION_KEY).getValue()
+                                    : httpHeader.getRequestHeader(SESSION_KEY).get(0))
+                            .log();
+                }
+            }
         }
         return null;
     }
@@ -167,15 +205,26 @@ public int getInstanceId() {
                                         + ",last_accessed"
                                         + ",jwt"
                                         + ",instance_id"
+                                        + ",machine_id"
+                                        + ",user_agent"
+                                        + ",application"
+                                        + ",version"
+                                        + ",other"
                                         + ") "
-                                        + " VALUES (?,?,?,?,?,?)")) {
+                                        + " VALUES (?,?,?,?,?,?,?,?,?,?,?)")) {
+
                     int pramIndex = 1;
                     ps.setString(pramIndex++, sessionId);
                     ps.setString(pramIndex++, domain);
                     ps.setTimestamp(pramIndex++, new Timestamp(created.getMillis()));
                     ps.setTimestamp(pramIndex++, new Timestamp(lastAccessed.getMillis()));
                     ps.setString(pramIndex++, jwt);
-                    ps.setInt(pramIndex++, application.getInstanceId());
+                    ps.setInt(pramIndex++, ApplicationLifecycle.application.getInstanceId());
+                    ps.setString(pramIndex++, xMachineId);
+                    ps.setString(pramIndex++, userAgent);
+                    ps.setString(pramIndex++, xApplication);
+                    ps.setString(pramIndex++, xVersion);
+                    ps.setString(pramIndex++, other.toString());
                     ps.executeUpdate();
                 }
             } catch (SQLException ex) {
@@ -191,17 +240,31 @@ public int getInstanceId() {
                 try (Connection connection = dataSource.getConnection();
                         PreparedStatement ps = connection
                                 .prepareStatement("UPDATE system_sessions SET "
-                                        + "           last_accessed = ?"
-                                        + "           ,jwt = ?"
-                                        + "           ,instance_id=?"
+                                        + "           last_accessed = ? "
+                                        + "           ,jwt = ? "
+                                        + "           ,instance_id=? "
+                                        + "           ,machine_id=? "
+                                        + "           ,user_agent=? "
+                                        + "           ,application=? "
+                                        + "           ,version=? "
+                                        + "           ,other=? "
                                         + " WHERE session_id = ?")) {
+
                     int pramIndex = 1;
                     try {
                         ps.setTimestamp(pramIndex++, new Timestamp(lastAccessed.getMillis()));
-                        ps.setString(pramIndex++, jwt); 
-                         ps.setInt(pramIndex++, application.getInstanceId());
-                        ps.setString(pramIndex++, sessionId);                      
-                        ps.executeUpdate();
+                        ps.setString(pramIndex++, jwt);
+                        ps.setInt(pramIndex++, ApplicationLifecycle.application.getInstanceId());
+                        ps.setString(pramIndex++, xMachineId);
+                        ps.setString(pramIndex++, userAgent);
+                        ps.setString(pramIndex++, xApplication);
+                        ps.setString(pramIndex++, xVersion);
+                        ps.setString(pramIndex++, other.toString());
+
+                        ps.setString(pramIndex++, sessionId);
+                     if(   ps.executeUpdate()==0){
+                        createSystemSession(dataSource);
+                     }
                     } catch (SQLException ex) {
                         ex.printStackTrace();
                     }
@@ -227,26 +290,27 @@ public int getInstanceId() {
         }
     }
 
-    public static Session fetch(String sessionId,AgroalDataSource dataSource) {
+    public static Session fetch(String sessionId, AgroalDataSource dataSource) {
         try {
-            
-        try(Connection connection = dataSource.getConnection();
-        PreparedStatement ps = connection.prepareStatement("SELECT * FROM system_sessions WHERE session_id = ?");){
-            try {
-                ps.setString(1, sessionId);
-                try(ResultSet rst = ps.executeQuery();){
-                    if(rst.next()){
-                        return create(rst);
-                    }
-                }                
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
 
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+            try (Connection connection = dataSource.getConnection();
+                    PreparedStatement ps = connection
+                            .prepareStatement("SELECT * FROM system_sessions WHERE session_id = ?");) {
+                try {
+                    ps.setString(1, sessionId);
+                    try (ResultSet rst = ps.executeQuery();) {
+                        if (rst.next()) {
+                            return create(rst);
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return null;
     }
 }

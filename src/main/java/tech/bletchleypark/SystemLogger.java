@@ -26,7 +26,7 @@ public class SystemLogger {
 
     public enum ErrorCode {
         GENERAL(1000),
-        PROCESS_STILL_RUNNING(2000);
+        PROCESS_STILL_RUNNING(2000), INVAILD_JWT(2300);
 
         public final int code;
 

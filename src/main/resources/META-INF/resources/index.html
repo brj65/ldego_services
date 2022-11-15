@@ -249,10 +249,19 @@
         border: 1px solid lightgrey;
         padding: 1rem;
         background: white;
-        font-size: 1rem;
+        font-size: 1.6rem;
         font-weight: 300;
         grid-column: span 12;
       }
+
+    }
+
+    .serverDateTime {
+      margin-top: 15px;
+      text-align: right;
+      font-size: 1.6rem;
+      font-weight: 300;
+      color: white;
     }
   </style>
 </head>
@@ -261,7 +270,7 @@
   <div class="header-wrapper">
     <div class="grid">
       <div class="header">
-
+        <div class="serverDateTime" id="serverDateTime"></div>
       </div>
     </div>
   </div>
@@ -280,7 +289,7 @@
               <li>Base Version: <code>2.14.0.Final</code></li>
               <li>Container: <code id="container"></code></li>
               <li>Sessions: <code id="sessions"></code></li>
-              <li>Server Time: <code id="serverDateTime"></code></li>
+              <li>Init Count: <code id="init"></code></li>
             </ul>
           </div>
         </div>
@@ -314,9 +323,7 @@
       url: '/info?requestFor=container',
       crossDomain: true,
       success: function (data) {
-        $('#container').html(data);
-        setInterval(doDate, 1000);
-        setInterval(doSession, 60000);
+        $('#container').html(data);       
       },
       error: function (xhr, ajaxOptions, thrownError) {
         console.log('xHR: ' + xhr);
@@ -341,9 +348,13 @@
       }
     });
   }
+  var cnt = 1;
   $().ready(function () {
+    $('#init').html(cnt);
     doSession();
     doDate();
+    setInterval(doDate, 1000);
+    setInterval(doSession, 60000);
   });
 </script>
 
