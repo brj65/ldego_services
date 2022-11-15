@@ -23,6 +23,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.runtime.StartupEvent;
+import tech.bletchleypark.ApplicationLifecycle;
 import tech.bletchleypark.SystemLogger;
 import tech.bletchleypark.SystemLogger.ErrorCode;
 import tech.bletchleypark.session.Session.SessionState;
@@ -33,6 +34,9 @@ public class SessionManager {
 
     @Inject
     public AgroalDataSource defaultDataSource;
+
+    @Inject
+    ApplicationLifecycle application;
 
     SystemLogger logger = SystemLogger.getLogger(SessionManager.class);
     private final HashMap<String, Session> sessions = new HashMap<>();
@@ -114,6 +118,15 @@ public class SessionManager {
                 session.updateSystemSession(defaultDataSource);
                 return session;
             }
+           if(!application.localSessionsOnly()){
+            session = session.fetch(jwt.getClaim("sessionId").asString(),defaultDataSource);
+            if (session != null && session.getSessionState().notExpired()) {
+                session.updateSystemSession(defaultDataSource);
+                sessions.put(session.sessionId, session);
+                logger.warn("found on on other sever "+session.getInstanceId());
+                return session;
+            }
+           } 
         }
         session = Session.create(httpHeader, ui);
         addSession(session);

@@ -57,7 +57,9 @@ public class Session {
             return this != EXPIRED;
         }
     }
-
+public int getInstanceId() {
+    return instanceId;
+}
     public static Session create(HttpHeaders httpHeader, UriInfo ui) {
         return new Session(httpHeader, ui);
     }
@@ -223,5 +225,28 @@ public class Session {
                 ex.printStackTrace();
             }
         }
+    }
+
+    public Session fetch(String sessionId,AgroalDataSource dataSource) {
+        try {
+            
+        try(Connection connection = dataSource.getConnection();
+        PreparedStatement ps = connection.prepareStatement("SELECT * FROM system_sessions WHERE session_id = ?");){
+            try {
+                ps.setString(1, sessionId);
+                try(ResultSet rst = ps.executeQuery();){
+                    if(rst.next()){
+                        return create(rst);
+                    }
+                }                
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+        return null;
     }
 }

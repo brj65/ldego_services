@@ -54,4 +54,9 @@ public class ApplicationLifecycle {
        
         return config;
     }
+
+    public boolean localSessionsOnly(){
+        return optConfigBoolean("bpark.sessions.local.only", false);
+        
+    }
 }
