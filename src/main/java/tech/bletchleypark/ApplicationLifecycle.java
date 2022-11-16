@@ -4,6 +4,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import io.agroal.api.AgroalDataSource;
@@ -58,5 +59,12 @@ public class ApplicationLifecycle {
     public boolean localSessionsOnly(){
         return optConfigBoolean("bpark.sessions.local.only", false);
         
+    }
+
+
+    public JSONObject toJSONObject(String key,JSONArray array){
+        JSONObject json = new JSONObject();
+        json.put(key, array);
+        return json;
     }
 }

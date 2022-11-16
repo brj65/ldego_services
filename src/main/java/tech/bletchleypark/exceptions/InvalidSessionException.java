@@ -7,4 +7,7 @@ public class InvalidSessionException extends Throwable {
     public InvalidSessionException(Throwable cause){
         super(cause);
     }
+    public InvalidSessionException(String string) {
+        super(string);
+    }
 }

@@ -26,6 +26,7 @@ import io.agroal.api.AgroalDataSource;
 import tech.bletchleypark.ApplicationLifecycle;
 import tech.bletchleypark.SystemLogger;
 import tech.bletchleypark.SystemLogger.ErrorCode;
+import tech.bletchleypark.enums.LogLevel;
 
 import static tech.bletchleypark.ConfigProviderManager.*;
 
@@ -73,7 +74,9 @@ public class Session {
     public int getInstanceId() {
         return instanceId;
     }
-
+public String getxMachineId() {
+    return xMachineId;
+}
     public static Session create(HttpHeaders httpHeader, UriInfo ui) {
         return new Session(httpHeader, ui);
     }
@@ -158,6 +161,7 @@ public class Session {
                 } catch (com.auth0.jwt.exceptions.JWTDecodeException ex) {
                     SystemLogger.getLogger(Session.class).builder()
                             .errorCode(ErrorCode.INVAILD_JWT)
+                            .logLevel(LogLevel.WARN)
                             .message("Invaild JWT Token")
                             .extra(httpHeader.getCookies().keySet().contains(SESSION_KEY)
                                     ? httpHeader.getCookies().get(SESSION_KEY).getValue()

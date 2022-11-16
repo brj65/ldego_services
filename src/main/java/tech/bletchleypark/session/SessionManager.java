@@ -3,6 +3,7 @@ package tech.bletchleypark.session;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,7 +17,6 @@ import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
-
 import org.json.JSONArray;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
@@ -27,6 +27,7 @@ import io.quarkus.runtime.StartupEvent;
 import tech.bletchleypark.ApplicationLifecycle;
 import tech.bletchleypark.SystemLogger;
 import tech.bletchleypark.SystemLogger.ErrorCode;
+import tech.bletchleypark.exceptions.InvalidSessionException;
 import tech.bletchleypark.session.Session.SessionState;
 import static tech.bletchleypark.ConfigProviderManager.*;
 
@@ -47,15 +48,18 @@ public class SessionManager {
         DEVICE, WEB
     }
 
+    public AgroalDataSource defaultDataSource() {
+        return defaultDataSource;
+    }
+
     void onStop(@Observes ShutdownEvent ev) {
         try {
-              cleanup.cancel();
+            cleanup.cancel();
         } catch (Exception e) {
-                // do nothing
+            // do nothing
         }
         logger.info("The application is stopping...");
-}
-
+    }
 
     void onStart(@Observes StartupEvent ev) {
         cleanup.schedule(new TimerTask() {
@@ -80,9 +84,9 @@ public class SessionManager {
                 }
                 running = true;
                 passes = 0;
-                if ( !optConfigBoolean("bpark.sessions.local.only", false))
+                if (!optConfigBoolean("bpark.sessions.local.only", false))
                     try {
-                        List<String> sessionIdOnServer = new ArrayList<String>() ;
+                        List<String> sessionIdOnServer = new ArrayList<String>();
                         try (Connection connection = defaultDataSource.getConnection();
                                 PreparedStatement ps = connection.prepareStatement("SELECT * FROM system_sessions");
                                 ResultSet rst = ps.executeQuery()) {
@@ -91,14 +95,14 @@ public class SessionManager {
                                 sessionIdOnServer.add(session.sessionId);
                                 if (sessions.get(session.sessionId) != null) {
                                     sessions.replace(session.sessionId, session);
-                                }else{
+                                } else {
                                     sessions.put(session.sessionId, session);
                                 }
                             }
                         }
-                        List<String> deleteThese = getSessionKeys(null);    
+                        List<String> deleteThese = getSessionKeys(null);
                         deleteThese.removeAll(sessionIdOnServer);
-                        deleteThese.forEach(key->{
+                        deleteThese.forEach(key -> {
                             sessions.remove(key);
                         });
                     } catch (Exception e) {
@@ -117,7 +121,7 @@ public class SessionManager {
                 optConfigInt("bpark.sessions.clean.up.every.seconds", 60) * 1000);
     }
 
-    private void removeSession(Session session) {
+    public void removeSession(Session session) {
         sessions.remove(session.sessionId);
         session.deleteSystemSession(defaultDataSource);
     }
@@ -136,17 +140,17 @@ public class SessionManager {
                 session.updateSystemSession(defaultDataSource);
                 return session;
             }
-           if(!application.localSessionsOnly()){
-            session = Session.fetch(jwt.getClaim("sessionId").asString(),defaultDataSource);
-            if (session != null && session.getSessionState().notExpired()) {
-                session.updateSystemSession(defaultDataSource);
-                sessions.put(session.sessionId, session);
-                logger.info("found on on other sever "+session.getInstanceId()+" - "+session.sessionId);
-                return session;
+            if (!application.localSessionsOnly()) {
+                session = Session.fetch(jwt.getClaim("sessionId").asString(), defaultDataSource);
+                if (session != null && session.getSessionState().notExpired()) {
+                    session.updateSystemSession(defaultDataSource);
+                    sessions.put(session.sessionId, session);
+                    logger.info("found on on other sever " + session.getInstanceId() + " - " + session.sessionId);
+                    return session;
+                }
             }
-           } 
-        }        
-        session = Session.create(httpHeader, ui);        
+        }
+        session = Session.create(httpHeader, ui);
         addSession(session);
         return session;
     }
@@ -184,5 +188,51 @@ public class SessionManager {
         }
         return array;
     }
+
+    public Validation isValid(Session session) {
+        return new Validation(session, defaultDataSource);
+    }
+
+    public static class Validation {
+        private Session session;
+        private boolean machineId;
+        private boolean silenceExceptions;
+        private AgroalDataSource dataSource;
+
+        public Validation(Session session, AgroalDataSource defaultDataSource) {
+            this.session = session;
+            this.dataSource = defaultDataSource;
+        }
+
+        public Validation machineId() {
+            machineId = true;
+            return this;
+        }
+
+        public Validation silenceExceptions() {
+            silenceExceptions = true;
+            return this;
+        }
+
+        public boolean check() throws SQLException, InvalidSessionException {
+            boolean vaild = true;
+            if (machineId) {
+                try (Connection connection = dataSource.getConnection();
+                        PreparedStatement ps = connection
+                                .prepareStatement("SELECT id from device WHERE machine_id = ?");) {
+                    ps.setString(1, session.getxMachineId());
+                    ResultSet rst = ps.executeQuery();
+                    vaild = rst.next();
+                    rst.close();
+                }
+            }
+            if (!vaild && !silenceExceptions) {
+                throw new InvalidSessionException("Invaild MachineId");
+            }
+            return vaild;
+        }
+    }
+
+	
 
 }
