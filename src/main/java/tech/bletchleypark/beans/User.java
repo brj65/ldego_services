@@ -162,10 +162,7 @@ public class User {
                 ps.setString(idx++, other.toString());
                 ps.setString(idx++, email);
                 ps.setString(idx++, mobile);
-                int x = ps.executeUpdate();
-                if (x != 1) {
-                    int a = 0;
-                }
+                ps.executeUpdate();
             }
         } else {
             try (Connection connection = ApplicationLifecycle.application.defaultDataSource.getConnection();
@@ -181,13 +178,10 @@ public class User {
                 ps.setString(idx++, lastName);
                 ps.setString(idx++, other.toString());
                 ps.setString(idx++, email);
-                ps.setString(idx++, mobile==null?"":mobile);
+                ps.setString(idx++, mobile == null ? "" : mobile);
                 // key
                 ps.setString(idx++, login);
-                int x = ps.executeUpdate();
-                if (x != 1) {
-                    int a = 0;
-                }
+                ps.executeUpdate();
             }
         }
     }
