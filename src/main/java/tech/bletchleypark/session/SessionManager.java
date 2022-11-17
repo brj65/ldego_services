@@ -219,10 +219,13 @@ public class SessionManager {
             if (machineId) {
                 try (Connection connection = dataSource.getConnection();
                         PreparedStatement ps = connection
-                                .prepareStatement("SELECT id from device WHERE machine_id = ?");) {
+                                .prepareStatement("SELECT * from device WHERE machine_id = ?");) {
                     ps.setString(1, session.getxMachineId());
                     ResultSet rst = ps.executeQuery();
                     vaild = rst.next();
+                   // if(vaild){
+                   //     session.setMachine(Device.c(rst))
+                  //  }
                     rst.close();
                 }
             }
