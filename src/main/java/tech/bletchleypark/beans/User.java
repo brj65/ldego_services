@@ -133,10 +133,14 @@ public class User {
     public org.json.JSONObject JSONObject() {
         org.json.JSONObject json = new org.json.JSONObject();
         json.put("login", login);
+        json.put("disabled", disabled);
         json.put("extension", extension);
         json.put("pin", pin);
         json.put("first_name", firstName);
         json.put("last_name", lastName);
+        json.put("email", email);
+        json.put("mobile", mobile);
+        json.put("other", other);
         json.put("lastupdated", lastupdated);
         return json;
     }
