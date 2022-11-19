@@ -9,6 +9,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import tech.bletchleypark.ApplicationLifecycle;
+import tech.bletchleypark.enums.Access;
 
 public class User {
     private String login;
@@ -21,6 +22,7 @@ public class User {
     private JSONObject other = new JSONObject();
     private boolean disabled = false;
     private DateTime lastupdated;
+    private Access access;
 
     public User(String login, String firstName, String lastName, boolean disabled, JSONObject other) {
         this.login = login;
@@ -40,6 +42,7 @@ public class User {
         email = rst.getString("email");
         mobile = rst.getString("mobile");
         disabled = rst.getBoolean("disabled");
+        access = Access.getValueFor(rst.getString("access"));
         lastupdated = new DateTime(rst.getTimestamp("lastupdated"));
         try {
             other = new JSONObject(rst.getString("other"));
@@ -96,6 +99,14 @@ public class User {
         return email;
     }
 
+    public void setAccess(Access access) {
+        this.access = access;
+    }
+
+    public Access getAccess() {
+        return access;
+    }
+
     public User addOther(JSONObject other) {
         other.keySet().forEach(key -> {
             if (this.other.has(key)) {
@@ -141,6 +152,7 @@ public class User {
         json.put("email", email);
         json.put("mobile", mobile);
         json.put("other", other);
+         json.put("access", (access !=null ?access.toString():null));
         json.put("lastupdated", lastupdated);
         return json;
     }
@@ -150,8 +162,8 @@ public class User {
         if (user == null) {
             try (Connection connection = ApplicationLifecycle.application.defaultDataSource.getConnection();
                     PreparedStatement ps = connection.prepareStatement("INSERT INTO `user` " +
-                            "(login,disabled,extension,pin,first_name,last_name,other,email,mobile) "
-                            + "VALUES (?,?,?,?,?,?,?,?,?)");) {
+                            "(login,disabled,extension,pin,first_name,last_name,other,email,mobile,access) "
+                            + "VALUES (?,?,?,?,?,?,?,?,?,?)");) {
                 int idx = 1;
                 ps.setString(idx++, login);
                 ps.setBoolean(idx++, disabled);
@@ -162,12 +174,14 @@ public class User {
                 ps.setString(idx++, other.toString());
                 ps.setString(idx++, email);
                 ps.setString(idx++, mobile);
+                ps.setString(idx++, access.toString());
                 ps.executeUpdate();
             }
         } else {
             try (Connection connection = ApplicationLifecycle.application.defaultDataSource.getConnection();
                     PreparedStatement ps = connection.prepareStatement("UPDATE `user` SET " +
-                            "disabled = ?,extension = ?,pin = ?,first_name = ?,last_name = ?,other = ?,email = ?,mobile = ? "
+                            "disabled = ?,extension = ?,pin = ?,first_name = ?,last_name = ?,other = ?,email = ?,mobile = ?"
+                            + ",access=?"
                             + " WHERE login = ?");) {
                 int idx = 1;
 
@@ -179,6 +193,7 @@ public class User {
                 ps.setString(idx++, other.toString());
                 ps.setString(idx++, email);
                 ps.setString(idx++, mobile == null ? "" : mobile);
+                ps.setString(idx++, access.toString());
                 // key
                 ps.setString(idx++, login);
                 ps.executeUpdate();

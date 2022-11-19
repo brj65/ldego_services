@@ -14,6 +14,7 @@ import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.UriInfo;
 
 import org.joda.time.DateTime;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.auth0.jwt.JWT;
@@ -62,6 +63,8 @@ public class Session {
     private String xVersion = "";
     @Expose
     private JSONObject other = new JSONObject();
+
+    private JSONObject device = new JSONObject();
 
     public enum SessionState {
         CREATED, ACTIVE, SLEEPING, EXPIRED;
@@ -315,5 +318,14 @@ public String getxMachineId() {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public void setDevice(ResultSet rst) throws JSONException, SQLException {
+        device = new JSONObject();
+        device.put("pool", rst.getString("pool"));
+        device.put("min_access_level", rst.getString("min_access_level"));
+    }
+    public JSONObject getDevice() {
+        return device;
     }
 }

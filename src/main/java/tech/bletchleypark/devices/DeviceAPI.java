@@ -20,6 +20,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import io.agroal.api.AgroalDataSource;
@@ -41,19 +42,19 @@ public class DeviceAPI {
     public Response autoAuth(@Context UriInfo ui,
             @Context HttpHeaders httpHeader) throws SQLException, InvalidSessionException {
         JSONObject responce = new JSONObject();
-        boolean approved =false;
+        boolean approved = false;
         Session session = sessionsMgr.getSession(httpHeader, ui);
         sessionsMgr.isValid(session).check();
         try (Connection connection = defaultDataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement("SELECT approved FROM device "
                         + " WHERE machine_id = ?")) {
-                            ps.setString(1, session.getxMachineId());
-                            ResultSet rst = ps.executeQuery();
-                            if(rst.next()){
-                                approved = rst.getBoolean("approved");
-                            }
-                            rst.close();
-                        }
+            ps.setString(1, session.getxMachineId());
+            ResultSet rst = ps.executeQuery();
+            if (rst.next()) {
+                approved = rst.getBoolean("approved");
+            }
+            rst.close();
+        }
         responce.put("auth", approved);
         return Response.ok(responce.toString()).cookie(session.getCookies()).build();
     }
@@ -74,18 +75,18 @@ public class DeviceAPI {
         try (Connection connection = defaultDataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement("INSERT INTO device "
                         + "(machine_id,brand,model,operating_system,operating_system_version"
-                        +",application_id,application_version) "
-                        +"VALUES (?,?,?,?,?,?,?)")) {
-                       int cnt=1;
-                       ps.setString(cnt++, requestJson.optString("machine_id"));
-                       ps.setString(cnt++, requestJson.optString("brand"));
-                       ps.setString(cnt++, requestJson.optString("model"));
-                       ps.setString(cnt++, requestJson.optString("operating_system"));
-                       ps.setString(cnt++, requestJson.optString("operating_system_version"));
-                       ps.setString(cnt++, requestJson.optString("application_id"));
-                       ps.setString(cnt++, requestJson.optString("application_version"));                            
-                       ps.executeUpdate();
-        }      
+                        + ",application_id,application_version) "
+                        + "VALUES (?,?,?,?,?,?,?)")) {
+            int cnt = 1;
+            ps.setString(cnt++, requestJson.optString("machine_id"));
+            ps.setString(cnt++, requestJson.optString("brand"));
+            ps.setString(cnt++, requestJson.optString("model"));
+            ps.setString(cnt++, requestJson.optString("operating_system"));
+            ps.setString(cnt++, requestJson.optString("operating_system_version"));
+            ps.setString(cnt++, requestJson.optString("application_id"));
+            ps.setString(cnt++, requestJson.optString("application_version"));
+            ps.executeUpdate();
+        }
         return Response.ok(responseJson.toString()).build();
     }
 
@@ -106,6 +107,11 @@ public class DeviceAPI {
             sessionsMgr.removeSession(session);
             return Response.ok(e.getMessage()).cookie(session.getCookies()).build();
         }
-        return Response.ok(session.getJWTToken()).cookie(session.getCookies()).build();
+        JSONObject responce = new JSONObject();
+        responce.put("jwt", session.getJWTToken());
+        responce.put("config", session.getDevice());
+        JSONArray requests = new JSONArray();
+        responce.put("requests", requests);
+        return Response.ok(responce.toString()).cookie(session.getCookies()).build();
     }
 }

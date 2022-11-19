@@ -216,16 +216,19 @@ public class SessionManager {
 
         public boolean check() throws SQLException, InvalidSessionException {
             boolean vaild = true;
-            if (machineId) {
+            if(session.getJWTToken()==null || session.getJWTToken().isEmpty()){
+                vaild = false;
+            }
+            if (vaild && machineId) {
                 try (Connection connection = dataSource.getConnection();
                         PreparedStatement ps = connection
                                 .prepareStatement("SELECT * from device WHERE machine_id = ?");) {
                     ps.setString(1, session.getxMachineId());
                     ResultSet rst = ps.executeQuery();
                     vaild = rst.next();
-                   // if(vaild){
-                   //     session.setMachine(Device.c(rst))
-                  //  }
+                    if(vaild){
+                        session.setDevice(rst);
+                    }
                     rst.close();
                 }
             }
