@@ -22,6 +22,7 @@ import org.json.JSONArray;
 import com.auth0.jwt.interfaces.DecodedJWT;
 
 import io.agroal.api.AgroalDataSource;
+import io.quarkus.agroal.DataSource;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 import tech.bletchleypark.ApplicationLifecycle;
@@ -29,12 +30,15 @@ import tech.bletchleypark.SystemLogger;
 import tech.bletchleypark.SystemLogger.ErrorCode;
 import tech.bletchleypark.exceptions.InvalidSessionException;
 import tech.bletchleypark.session.Session.SessionState;
+import tech.bletchleypark.tools.SQLTools;
+
 import static tech.bletchleypark.ConfigProviderManager.*;
 
 @ApplicationScoped
 public class SessionManager {
 
     @Inject
+    @DataSource("test")
     public AgroalDataSource defaultDataSource;
 
     @Inject
@@ -87,19 +91,21 @@ public class SessionManager {
                 if (!optConfigBoolean("bpark.sessions.local.only", false))
                     try {
                         List<String> sessionIdOnServer = new ArrayList<String>();
-                        try (Connection connection = defaultDataSource.getConnection();
-                                PreparedStatement ps = connection.prepareStatement("SELECT * FROM system_sessions");
-                                ResultSet rst = ps.executeQuery()) {
-                            while (rst.next()) {
-                                Session session = Session.create(rst);
-                                sessionIdOnServer.add(session.sessionId);
-                                if (sessions.get(session.sessionId) != null) {
-                                    sessions.replace(session.sessionId, session);
-                                } else {
-                                    sessions.put(session.sessionId, session);
-                                }
+                        Connection connection = SQLTools.getConnection(defaultDataSource);
+                        PreparedStatement ps = connection.prepareStatement("SELECT * FROM system_sessions");
+                        ResultSet rst = ps.executeQuery();
+                        while (rst.next()) {
+                            Session session = Session.create(rst);
+                            sessionIdOnServer.add(session.sessionId);
+                            if (sessions.get(session.sessionId) != null) {
+                                sessions.replace(session.sessionId, session);
+                            } else {
+                                sessions.put(session.sessionId, session);
                             }
                         }
+                        rst.close();
+                        ps.close();
+                        connection.close();
                         List<String> deleteThese = getSessionKeys(null);
                         deleteThese.removeAll(sessionIdOnServer);
                         deleteThese.forEach(key -> {
@@ -216,7 +222,7 @@ public class SessionManager {
 
         public boolean check() throws SQLException, InvalidSessionException {
             boolean vaild = true;
-            if(session.getJWTToken()==null || session.getJWTToken().isEmpty()){
+            if (session.getJWTToken() == null || session.getJWTToken().isEmpty()) {
                 vaild = false;
             }
             if (vaild && machineId) {
@@ -226,7 +232,7 @@ public class SessionManager {
                     ps.setString(1, session.getxMachineId());
                     ResultSet rst = ps.executeQuery();
                     vaild = rst.next();
-                    if(vaild){
+                    if (vaild) {
                         session.setDevice(rst);
                     }
                     rst.close();
@@ -238,7 +244,5 @@ public class SessionManager {
             return vaild;
         }
     }
-
-	
 
 }

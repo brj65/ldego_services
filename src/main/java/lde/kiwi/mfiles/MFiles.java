@@ -30,8 +30,10 @@ import org.slf4j.LoggerFactory;
 
 import lde.kiwi.api.mfiles.cache_files.CachedAsset;
 import lde.kiwi.api.mfiles.cache_files.CachedSiteVisit;
+import lde.kiwi.api.mfiles.cache_files.DateRange;
 import tech.bletchleypark.ApplicationLifecycle;
 import tech.bletchleypark.HttpPostMultipart;
+import tech.bletchleypark.tools.SQLTools;
 import tech.bletchleypark.tools.StringTools;
 
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -340,19 +342,28 @@ public class MFiles {
     public synchronized JSONObject updateObjectsCache(String vault, long mfClassId, int mfParameterId,
             String fetchParameters,
             boolean allProperties,
-            int limit)
+            int limit) throws JSONException, IOException {
+        return updateObjectsCache(vault, mfClassId, mfParameterId, fetchParameters, allProperties, limit, false);
+    }
+
+    public synchronized JSONObject updateObjectsCache(String vault, long mfClassId, int mfParameterId,
+            String fetchParameters,
+            boolean allProperties,
+            int limit, boolean sinceLast_LastModified)
             throws JSONException, IOException {
         JSONObject mfilePropertiesDefinitions = fetchPropertyDefinitions(vault);
         JSONArray objects = new JSONArray();
         try {
-            int start = getConfigInt(vaultUpdate("mfiles.vault.site_visit.start", vault));
-            int end = getConfigInt(vaultUpdate("mfiles.vault.site_visit.end", vault));
-            DateTime startDateTime = DateTime.now().minusDays(start);
-            DateTime endDateTime = DateTime.now().plusDays(end);
-            if (fetchParameters == null || fetchParameters.isEmpty())
-                fetchParameters = "p" + mfParameterId + ">>=" + startDateTime.toString("yyyy-MM-dd'T'KK:mm:ss'Z'")
+            if (fetchParameters == null || fetchParameters.isEmpty()) {
+                DateRange dateRange = CachedSiteVisit.getDateRange(vault);
+                fetchParameters = (sinceLast_LastModified
+                        ? "p" + 89 + ">>="
+                                + CachedSiteVisit.getLastModifiedDateTime(vault).toString("yyyy-MM-dd'T'KK:mm:ss'Z'"+"&")
+                        : "")
+                        + "p" + mfParameterId + ">>=" + dateRange.dateFrom.toString("yyyy-MM-dd'T'KK:mm:ss'Z'")
                         + "&p" + mfParameterId + "<<="
-                        + endDateTime.toString("yyyy-MM-dd'T'KK:mm:ss'Z'");
+                        + dateRange.dateTo.toString("yyyy-MM-dd'T'KK:mm:ss'Z'");
+            }
             // Update DB to indicate refreshing has started
             CachedSiteVisit.setRefreshing(vault, true);
             // Get Site Visits from mFiles
@@ -423,7 +434,8 @@ public class MFiles {
             new Thread("updateObjectsCache") {
                 public void run() {
                     try {
-                        try (Connection conn = ApplicationLifecycle.application.defaultDataSource.getConnection();
+                        try (Connection conn = SQLTools
+                                .getConnection(ApplicationLifecycle.application.defaultDataSource);
                                 Statement stmt = conn.createStatement()) {
                             try {
                                 HashMap<Long, CachedSiteVisit> siteVisitsMap = new HashMap<>();
