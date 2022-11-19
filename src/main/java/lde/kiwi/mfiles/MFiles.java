@@ -42,15 +42,15 @@ import static tech.bletchleypark.ConfigProviderManager.*;
 public class MFiles {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
-    public HashMap<String, MfilesVault> vaults = new HashMap<>();
+    public HashMap<String, MFilesVault> vaults = new HashMap<>();
     private String mfAuthenticationToken;
     private String serverURL;
     private String superLogin;
     private String superPassword;
-    private final HashMap<String, MfilesAlias> cardsAlias = new HashMap<>();
+    private final HashMap<String, MFilesVaultAlias> cardsAlias = new HashMap<>();
     {
-        cardsAlias.put("project_test_site_visits", new MfilesAlias("project_test", "Site Visits", 103));
-        cardsAlias.put("project_site_visits", new MfilesAlias("project", "Site Visits", 103));
+        cardsAlias.put("project_test_site_visits", new MFilesVaultAlias("project_test", "Site Visits", 103));
+        cardsAlias.put("project_site_visits", new MFilesVaultAlias("project", "Site Visits", 103));
     }
 
     public static MFiles mFiles() {
@@ -198,7 +198,7 @@ public class MFiles {
         return fetch("GET", "/structure/properties", auth, null);
     }
 
-    public MfilesVault fetchVault(String name) {
+    public MFilesVault fetchVault(String name) {
         return vaults.get(name);
     }
 
@@ -206,7 +206,7 @@ public class MFiles {
         JSONArray json = new JSONArray(fetch("GET", "/server/vaults", mfAuthenticationToken, null));
         vaults.clear();
         for (int idx = 0; idx < json.length(); idx++) {
-            MfilesVault vault = new MfilesVault(json.getJSONObject(idx));
+            MFilesVault vault = new MFilesVault(json.getJSONObject(idx));
             vaults.put(vault.name, vault);
         }
         return json.toString();
@@ -405,16 +405,16 @@ public class MFiles {
                 JSONArray siteVisitTasks = new JSONArray();
                 JSONObject siteVisitTask = new JSONObject();
                 siteVisitTask.put("status", "new");
-                siteVisitTask.put("order", 1);                
+                siteVisitTask.put("order", 1);
                 siteVisitTask.put("title", "Site Visit Hazard Form");
                 siteVisitTask.put("short_description", "Standard Site Visit Hazard Form. Required for each visit.");
-                siteVisitTask.put("required",true);
-                siteVisitTask.put("when","ARRIVE_ONSITE");
-                siteVisitTask.put("type","FORM");
+                siteVisitTask.put("required", true);
+                siteVisitTask.put("when", "ARRIVE_ONSITE");
+                siteVisitTask.put("type", "FORM");
                 JSONObject formTask = new JSONObject();
                 formTask.put("form", "siteinspectionreport");
                 formTask.put("type", "formio");
-                siteVisitTask.put("details",formTask);
+                siteVisitTask.put("details", formTask);
                 siteVisitTasks.put(siteVisitTask);
                 siteVisit.put("tasks", siteVisitTasks);
                 objects.put(siteVisit);
@@ -433,7 +433,7 @@ public class MFiles {
                                     siteVisitsMap.put(siteVisit.getMfilesId(), siteVisit);
                                 }
                                 HashMap<Long, CachedSiteVisit> siteVisitsDatabase = CachedSiteVisit
-                                        .fetchAllAsMap(ApplicationLifecycle.application.defaultDataSource,vault);
+                                        .fetchAllAsMap(ApplicationLifecycle.application.defaultDataSource, vault);
                                 List<Long> deleteThese = new ArrayList<>(siteVisitsDatabase.keySet());
                                 deleteThese.removeAll(siteVisitsMap.keySet());
                                 deleteThese.forEach(id -> {
@@ -447,7 +447,7 @@ public class MFiles {
                                     try {
                                         siteVisit.update();
                                     } catch (SQLException e) {
-                                            e.printStackTrace();
+                                        e.printStackTrace();
                                     }
                                 });
                             } catch (Exception ex) {
@@ -473,7 +473,7 @@ public class MFiles {
             throws JSONException, IOException {
         JSONArray siteVisits = new JSONArray();
         try {
-            siteVisits = CachedSiteVisit.fetchAllAsJSONArray(ApplicationLifecycle.application.defaultDataSource,vault);
+            siteVisits = CachedSiteVisit.fetchAllAsJSONArray(ApplicationLifecycle.application.defaultDataSource, vault);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -714,8 +714,7 @@ public class MFiles {
             jf.put(uploadAssets.getJSONObject(idx));
             // TODO: handle results
             fetch(HttpMethod.POST, vault,
-                    serverURL + "/REST/objects/0?checkIn=true",
-                    pj);
+                    serverURL + "/REST/objects/0?checkIn=true", pj);
         }
         // TODO: handle results
         return null;
@@ -740,7 +739,7 @@ public class MFiles {
     public JSONArray cleanCacheFiles(String vault, Consumer<String> logger) throws SQLException {
         JSONArray files = new JSONArray();
         List<CachedAsset> siteVisitAssets = new ArrayList<>();
-        CachedSiteVisit.fetchAll(ApplicationLifecycle.application.defaultDataSource,vault).forEach(visit -> {
+        CachedSiteVisit.fetchAll(ApplicationLifecycle.application.defaultDataSource, vault).forEach(visit -> {
             JSONArray tmpAssets = visit.getAssets();
             for (int tmpAssetIndex = 0; tmpAssetIndex < tmpAssets.length(); tmpAssetIndex++) {
                 JSONObject asset = tmpAssets.getJSONObject(tmpAssetIndex);

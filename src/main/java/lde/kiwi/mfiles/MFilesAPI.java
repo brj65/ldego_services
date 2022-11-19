@@ -20,6 +20,7 @@ import io.agroal.api.AgroalDataSource;
 import tech.bletchleypark.exceptions.InvalidSessionException;
 import tech.bletchleypark.session.Session;
 import tech.bletchleypark.session.SessionManager;
+import tech.bletchleypark.tools.JSONObjectTools;
 
 @Path("/mfiles")
 public class MFilesAPI {
@@ -28,6 +29,14 @@ public class MFilesAPI {
 
     @Inject
     public AgroalDataSource defaultDataSource;
+
+    @GET
+    @Path("/alias")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public Response alias() throws JSONException, IOException, SQLException {
+        return Response.ok(JSONObjectTools.JSONObjectNew("mfiles_alias_map",MFilesAliasManger.instanceOf.fetchAllAsJsonObject()).toString())
+                 .build();
+    }
 
     @GET
     @Path("/site_visits")
