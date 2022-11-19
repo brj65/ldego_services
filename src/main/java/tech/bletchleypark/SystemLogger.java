@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tech.bletchleypark.enums.LogLevel;
-import tech.bletchleypark.tools.Function;
+import tech.bletchleypark.tools.GeneralTools;
 import static tech.bletchleypark.ApplicationLifecycle.*;
 
 public class SystemLogger {
@@ -238,7 +238,7 @@ public class SystemLogger {
             } catch (Exception e) {
                 // logger.error(e);
                 e.printStackTrace();
-                Function.pause(60);
+                GeneralTools.pause(60);
             }
         } while (!logLines.isEmpty());
         updating = false;
