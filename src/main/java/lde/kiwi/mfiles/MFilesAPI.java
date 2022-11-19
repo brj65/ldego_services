@@ -1,4 +1,5 @@
 package lde.kiwi.mfiles;
+
 import java.io.IOException;
 import java.sql.SQLException;
 
@@ -30,12 +31,22 @@ public class MFilesAPI {
     @Inject
     public AgroalDataSource defaultDataSource;
 
+    private Session checkSessionIsVaild(UriInfo ui, HttpHeaders httpHeader) throws SQLException, InvalidSessionException {
+        Session session = sessionsMgr.getSession(httpHeader, ui);
+        return sessionsMgr.isValid(session)
+                .machineId()
+                .check() ? session : null;
+    }
+
     @GET
     @Path("/alias")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    public Response alias() throws JSONException, IOException, SQLException {
-        return Response.ok(JSONObjectTools.JSONObjectNew("mfiles_alias_map",MFilesAliasManger.instanceOf.fetchAllAsJsonObject()).toString())
-                 .build();
+    public Response alias(@Context UriInfo ui,
+            @Context HttpHeaders httpHeader) throws JSONException, IOException, SQLException, InvalidSessionException {
+        checkSessionIsVaild(ui, httpHeader);
+        return Response.ok(JSONObjectTools
+                .JSONObjectNew("mfiles_alias_map", MFilesAliasManger.instanceOf.fetchAllAsJsonObject()).toString())
+                .build();
     }
 
     @GET
@@ -50,21 +61,18 @@ public class MFilesAPI {
             @QueryParam("limit") int limit,
             @Context UriInfo ui,
             @Context HttpHeaders httpHeader) throws SQLException, InvalidSessionException {
-                Session session = sessionsMgr.getSession(httpHeader, ui);
-                sessionsMgr.isValid(session).check();
-
+        checkSessionIsVaild(ui, httpHeader);
         JSONObject response = new JSONObject();
         try {
-            int query = vault.equals("project")?1092:1468;
-            response = new MFiles().fetchSiteVisits( vault, obj,query, alias, params,
+            int query = vault.equals("project") ? 1092 : 1468;
+            response = new MFiles().fetchSiteVisits(vault, obj, query, alias, params,
                     allProperties != null ? true : false, refresh != null ? true : false, limit);
-            response.put("metadata_card", new MFiles().fetchCard(vault, obj, alias));            
-        } catch (JSONException | IOException  e) {
+            response.put("metadata_card", new MFiles().fetchCard(vault, obj, alias));
+        } catch (JSONException | IOException e) {
             e.printStackTrace();
             return Response.status(500).entity(e.getMessage()).build();
         }
         return Response.ok(response.toString()).build();
     }
 
-    
 }

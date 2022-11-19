@@ -331,10 +331,10 @@ public class MFiles {
             mfClassId = cardsAlias.get(vault.toLowerCase() + "_" + alias.toLowerCase().replace(" ", "_")).mfilesId;
         }
         if (CachedSiteVisit.isRefreshing(vault, cacheSiteVisitId))
-            return loadSiteVisits(vault, allProperties, limit);
+            return cachedSiteVisits(vault, allProperties, limit);
         return CachedSiteVisit.expired(vault) || refresh
                 ? updateObjectsCache(vault, mfClassId, mfQueryParam, params, allProperties, limit)
-                : loadSiteVisits(vault, allProperties, limit);
+                : cachedSiteVisits(vault, allProperties, limit);
     }
 
     public synchronized JSONObject updateObjectsCache(String vault, long mfClassId, int mfParameterId,
@@ -469,7 +469,7 @@ public class MFiles {
         return updateResponseSiteVisit(vault, responseSiteVisit);
     }
 
-    private synchronized JSONObject loadSiteVisits(String vault, boolean allProperties, int limit)
+    private synchronized JSONObject cachedSiteVisits(String vault, boolean allProperties, int limit)
             throws JSONException, IOException {
         JSONArray siteVisits = new JSONArray();
         try {

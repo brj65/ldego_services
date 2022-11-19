@@ -153,7 +153,18 @@ public class CachedSiteVisit {
             return true;
         }
     }
-
+    public static DateRange  getDateRange(String vault) throws SQLException {
+        try (Connection conn = application.defaultDataSource.getConnection();
+                PreparedStatement stmt = conn.prepareStatement("SELECT cached_tables.days_before_today, cached_tables.days_after_today, " +
+                        "FROM cached_tables " +
+                        "WHERE cached_tables.`table` = 'cached_site_visit' AND vault = '" + vault + "'");
+                ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                return  new DateRange(rs.getInt(1),rs.getInt(2));
+            }
+            return new DateRange(0, 0);
+        }
+    }
     public static void updateExpires(String vault) {
         try {
             try (Connection conn = application.defaultDataSource.getConnection();
