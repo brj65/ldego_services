@@ -1,7 +1,6 @@
 package lde.kiwi.api.mfiles.cache_files;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -130,21 +129,11 @@ public class CachedSiteVisit {
             stmtFetch.setLong(2, mfilesId);
             if (stmtFetch.executeQuery().next()) {
                 updatePreparedStatement(stmtUpdate);
-                try {
-                    stmtUpdate.executeUpdate();
-                } catch (Exception e) {
-                    int a = 0; // TODO: handle exception
-                }
-
+                stmtUpdate.executeUpdate();
             } else {
                 try (PreparedStatement stmtInsert = conn.prepareStatement(insert)) {
                     updatePreparedStatement(stmtInsert);
-                    try {
-                        stmtInsert.executeUpdate();
-                    } catch (Exception e) {
-                        int a = 0; // TODO: handle exception
-                    }
-
+                    stmtInsert.executeUpdate();
                 }
             }
         }
