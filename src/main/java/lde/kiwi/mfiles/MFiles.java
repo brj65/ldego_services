@@ -329,24 +329,24 @@ public class MFiles {
             String params,
             boolean allProperties, boolean refresh, int limit)
             throws JSONException, IOException, SQLException {
+        return fetchSiteVisits(vault, mfClassId, mfQueryParam, alias, params, allProperties, refresh, limit, true);
+    }
+
+    public synchronized JSONObject fetchSiteVisits(String vault, long mfClassId, int mfQueryParam, String alias,
+            String params,
+            boolean allProperties, boolean refresh, int limit, boolean sinceLast_LastModified)
+            throws JSONException, IOException, SQLException {
         if (alias != null) {
             mfClassId = cardsAlias.get(vault.toLowerCase() + "_" + alias.toLowerCase().replace(" ", "_")).mfilesId;
         }
         if (CachedSiteVisit.isRefreshing(vault, cacheSiteVisitId))
             return cachedSiteVisits(vault, allProperties, limit);
         return CachedSiteVisit.expired(vault) || refresh
-                ? updateObjectsCache(vault, mfClassId, mfQueryParam, params, allProperties, limit)
+                ? updateObjectsCache(vault, mfClassId, mfQueryParam, params, allProperties, limit, true)
                 : cachedSiteVisits(vault, allProperties, limit);
     }
 
-    public synchronized JSONObject updateObjectsCache(String vault, long mfClassId, int mfParameterId,
-            String fetchParameters,
-            boolean allProperties,
-            int limit) throws JSONException, IOException {
-        return updateObjectsCache(vault, mfClassId, mfParameterId, fetchParameters, allProperties, limit, false);
-    }
-
-    public synchronized JSONObject updateObjectsCache(String vault, long mfClassId, int mfParameterId,
+    private synchronized JSONObject updateObjectsCache(String vault, long mfClassId, int mfParameterId,
             String fetchParameters,
             boolean allProperties,
             int limit, boolean sinceLast_LastModified)
@@ -356,9 +356,10 @@ public class MFiles {
         try {
             if (fetchParameters == null || fetchParameters.isEmpty()) {
                 DateRange dateRange = CachedSiteVisit.getDateRange(vault);
-                fetchParameters = (sinceLast_LastModified
+                DateTime   lastModified = CachedSiteVisit.getLastModifiedDateTime(vault);
+                fetchParameters = (sinceLast_LastModified && lastModified !=null
                         ? "p" + 89 + ">>="
-                                + CachedSiteVisit.getLastModifiedDateTime(vault).toString("yyyy-MM-dd'T'KK:mm:ss'Z'"+"&")
+                                + lastModified.toString("yyyy-MM-dd'T'KK:mm:ss'Z'" + "&")
                         : "")
                         + "p" + mfParameterId + ">>=" + dateRange.dateFrom.toString("yyyy-MM-dd'T'KK:mm:ss'Z'")
                         + "&p" + mfParameterId + "<<="

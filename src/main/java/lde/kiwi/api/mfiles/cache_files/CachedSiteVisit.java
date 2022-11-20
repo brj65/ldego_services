@@ -165,6 +165,7 @@ public class CachedSiteVisit {
     }
 
     public static DateRange getDateRange(String vault) throws SQLException {
+        DateRange range= DateRange.midnight(0, 0); 
         try (Connection conn = application.defaultDataSource.getConnection();
                 PreparedStatement stmt = conn
                         .prepareStatement("SELECT cached_tables.days_before_today,cached_tables.days_after_today " +
@@ -172,9 +173,9 @@ public class CachedSiteVisit {
                                 "WHERE cached_tables.`table` = 'cached_site_visit' AND vault = '" + vault + "'");
                 ResultSet rs = stmt.executeQuery()) {
             if (rs.next()) {
-                return DateRange.midnight(rs.getInt(1), rs.getInt(2));
+               range= DateRange.midnight(rs.getInt(1), rs.getInt(2));
             }
-            return DateRange.midnight(0, 0);
+            return range;
         }
     }
 
@@ -257,7 +258,7 @@ public class CachedSiteVisit {
     }
 
     public static DateTime getLastModifiedDateTime(String vault) {
-        DateTime dateTime = DateTime.now();
+        DateTime dateTime =null;
         try {
 
             try (Connection conn = application.defaultDataSource.getConnection();

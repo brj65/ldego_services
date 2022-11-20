@@ -31,7 +31,8 @@ public class MFilesAPI {
     @Inject
     public AgroalDataSource defaultDataSource;
 
-    private Session checkSessionIsVaild(UriInfo ui, HttpHeaders httpHeader) throws SQLException, InvalidSessionException {
+    private Session checkSessionIsVaild(UriInfo ui, HttpHeaders httpHeader)
+            throws SQLException, InvalidSessionException {
         Session session = sessionsMgr.getSession(httpHeader, ui);
         return sessionsMgr.isValid(session)
                 .machineId()
@@ -59,6 +60,7 @@ public class MFilesAPI {
             @QueryParam("allProperties") String allProperties,
             @QueryParam("refresh") String refresh,
             @QueryParam("limit") int limit,
+            @QueryParam("modifiedOnly") String modifiedOnly,
             @Context UriInfo ui,
             @Context HttpHeaders httpHeader) throws SQLException, InvalidSessionException {
         checkSessionIsVaild(ui, httpHeader);
@@ -66,7 +68,8 @@ public class MFilesAPI {
         try {
             int query = vault.equals("project") ? 1092 : 1468;
             response = new MFiles().fetchSiteVisits(vault, obj, query, alias, params,
-                    allProperties != null ? true : false, refresh != null ? true : false, limit);
+                    allProperties != null ? true : false, refresh != null ? true : false, limit,
+                    modifiedOnly == null ? true : false);
             response.put("metadata_card", new MFiles().fetchCard(vault, obj, alias));
         } catch (JSONException | IOException e) {
             e.printStackTrace();
