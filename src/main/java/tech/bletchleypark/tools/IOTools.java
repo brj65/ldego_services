@@ -2,10 +2,14 @@ package tech.bletchleypark.tools;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.zip.ZipEntry;
@@ -85,5 +89,16 @@ public class IOTools {
 
         }
         return Paths.get(location);
+    }
+
+    public static String getResource(Class<?> aClass, String path) throws IOException {
+        String string = "";
+        InputStream inputStream = aClass.getClassLoader().getResourceAsStream(path);
+        InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+        BufferedReader reader = new BufferedReader(streamReader);
+        for (String line; (line = reader.readLine()) != null;) {
+            string += line;
+        }
+        return string;
     }
 }
